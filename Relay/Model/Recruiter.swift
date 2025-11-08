@@ -6,7 +6,7 @@
 //
 import Foundation
 
-struct Recruiter: Identifiable {
+struct Recruiter: Identifiable, Equatable {
     
     let id: String
     var name: String

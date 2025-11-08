@@ -12,17 +12,29 @@ struct ContentView: View {
     
     var body: some View {
         Group {
+            // user not logged in
             if authViewModel.userSession == nil {
-                // not logged in
                 RoleSelectionView()
+                
             } else {
-                // logged in
-                MainTabView()
+                if let user = authViewModel.currentUser {
+                    
+                    // we have the user, check role
+                    switch user.userRole {
+                    case .candidate:
+                        MainTabView()
+                    case .recruiter:
+                        RecruiterMainTabView()
+                    }
+                    
+                } else {
+                    // loading
+                    ProgressView()
+                }
             }
         }
     }
 }
-
 #Preview {
     ContentView()
         .environmentObject(AuthViewModel())
