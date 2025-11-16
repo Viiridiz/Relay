@@ -23,15 +23,26 @@ enum SheetContext: Identifiable {
 struct CandidateHomeView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     
+    // existing
     @State private var name: String = ""
     @State private var phone: String = ""
     @State private var resumeURL: String = ""
     @State private var coverLetterURL: String = ""
     
+    // new stuff
+    @State private var school: String = ""
+    @State private var languages: String = "" // comma separated
+    @State private var certifications: String = "" // comma separated
+    @State private var hobbies: String = "" // comma separated
+    @State private var avatarName: String = "avatar_1"
+    
     @State private var prompts: [Prompt] = []
     
     @State private var sheetContext: SheetContext? = nil
     
+    // list of avatar names from assets
+    let avatars = ["avatar_1", "avatar_2", "avatar_3", "avatar_4", "avatar_5", "avatar_6"]
+
     let promptBank: [PromptCategory] = [
         PromptCategory(name: "Projects & Skills", questions: [
             "My proudest project is...",
@@ -69,6 +80,29 @@ struct CandidateHomeView: View {
                                 .foregroundStyle(.secondary)
                         }
                         
+                        // avatar picker
+                        VStack(alignment: .leading) {
+                            Text("My Avatar")
+                                .font(.headline)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 15) {
+                                    ForEach(avatars, id: \.self) { avatar in
+                                        // expecting images in Assets
+                                        Image(avatar)
+                                            .resizable()
+                                            .frame(width: 60, height: 60)
+                                            .clipShape(Circle())
+                                            .overlay(
+                                                Circle().stroke(avatarName == avatar ? .blue : .clear, lineWidth: 3)
+                                            )
+                                            .onTapGesture {
+                                                self.avatarName = avatar
+                                            }
+                                    }
+                                }
+                            }
+                        }
+                        
                         VStack(alignment: .leading) {
                             Text("My Info")
                                 .font(.headline)
@@ -79,12 +113,30 @@ struct CandidateHomeView: View {
                         }
                         
                         VStack(alignment: .leading) {
+                            Text("My Details")
+                                .font(.headline)
+                            TextField("School / University", text: $school)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            TextField("Languages (comma-separated)", text: $languages)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .autocapitalization(.none)
+                            TextField("Certifications (comma-separated)", text: $certifications)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .autocapitalization(.none)
+                            TextField("Hobbies (comma-separated)", text: $hobbies)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .autocapitalization(.none)
+                        }
+                        
+                        VStack(alignment: .leading) {
                             Text("My Documents")
                                 .font(.headline)
                             TextField("Resume URL", text: $resumeURL)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .autocapitalization(.none)
                             TextField("Cover Letter URL (Optional)", text: $coverLetterURL)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .autocapitalization(.none)
                         }
                         
                         VStack(alignment: .leading) {
@@ -165,6 +217,21 @@ struct CandidateHomeView: View {
         self.resumeURL = profile.resumeURL
         self.coverLetterURL = profile.coverLetterURL
         self.prompts = profile.prompts
+        
+        // load new stuff
+        self.school = profile.school
+        self.avatarName = profile.avatarName
+        // convert arrays to string
+        self.languages = profile.languages.joined(separator: ", ")
+        self.certifications = profile.certifications.joined(separator: ", ")
+        self.hobbies = profile.hobbies.joined(separator: ", ")
+    }
+    
+    // for splitting strings
+    private func splitString(_ text: String) -> [String] {
+        return text.split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
     }
     
     func saveProfile() {
@@ -174,6 +241,14 @@ struct CandidateHomeView: View {
             profile.resumeURL = resumeURL
             profile.coverLetterURL = coverLetterURL
             profile.prompts = prompts
+            
+            // save new stuff
+            profile.school = school
+            profile.avatarName = avatarName
+            // convert strings to array
+            profile.languages = splitString(languages)
+            profile.certifications = splitString(certifications)
+            profile.hobbies = splitString(hobbies)
             
             Task {
                 await authViewModel.updateCandidateProfile(profile)

@@ -15,14 +15,16 @@ struct Event: Identifiable, Hashable {
     let startsAt: Date
     let endsAt: Date
     var eventCode: String? // the 6-digit code
+    var jobPosition: String
     
     // init for a new one
-    init(recruiterID: String, name: String, location: String, startsAt: Date, endsAt: Date) {
+    init(recruiterID: String, name: String, location: String, startsAt: Date, endsAt: Date, jobPosition: String) {
         self.recruiterID = recruiterID
         self.name = name
         self.location = location
         self.startsAt = startsAt
         self.endsAt = endsAt
+        self.jobPosition = jobPosition
     }
     
     // init from firestore
@@ -40,6 +42,9 @@ struct Event: Identifiable, Hashable {
         self.startsAt = startsAtTimestamp.dateValue()
         self.endsAt = endsAtTimestamp.dateValue()
         self.eventCode = dictionary["eventCode"] as? String
+        
+        // load new
+        self.jobPosition = dictionary["jobPosition"] as? String ?? ""
     }
     
     // convert to firestore dict
@@ -50,7 +55,8 @@ struct Event: Identifiable, Hashable {
             "location": location,
             "startsAt": Timestamp(date: startsAt),
             "endsAt": Timestamp(date: endsAt),
-            "eventCode": eventCode ?? ""
+            "eventCode": eventCode ?? "",
+            "jobPosition": jobPosition
         ]
     }
 }

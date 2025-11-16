@@ -21,10 +21,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct RelayApp: App {
     @StateObject private var authViewModel = AuthViewModel()
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
+    @AppStorage("isDarkMode") private var isDarkMode = false
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(authViewModel)
+                .preferredColorScheme(isDarkMode ? .dark : .light) // apply it
         }
     }
 }

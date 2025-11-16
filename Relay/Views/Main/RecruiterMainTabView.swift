@@ -19,7 +19,15 @@ struct RecruiterMainTabView: View {
                 Label("Events", systemImage: "calendar")
             }
             
-            // tab 2: profile
+            // tab 2: new dashboard
+            NavigationStack {
+                DecisionDashboardView()
+            }
+            .tabItem {
+                Label("Interested", systemImage: "star.fill")
+            }
+            
+            // tab 3: profile
             NavigationStack {
                 // show spinner or profile
                 if let profile = authViewModel.recruiterProfile {
@@ -27,24 +35,25 @@ struct RecruiterMainTabView: View {
                         Text("Welcome, \(profile.name)")
                             .font(.largeTitle)
                         Text(profile.email)
-                        // todo: add profile edit
                         Spacer()
                     }
                     .padding()
                     .navigationTitle("Profile")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Sign Out") {
-                                authViewModel.signOut()
-                            }
-                        }
-                    }
+                    // removed signout button, its in settings
                 } else {
                     ProgressView()
                 }
             }
             .tabItem {
                 Label("Profile", systemImage: "person.circle")
+            }
+            
+            // Tab 4: Settings
+            NavigationStack {
+                SettingsView()
+            }
+            .tabItem {
+                Label("Settings", systemImage: "gear")
             }
         }
     }

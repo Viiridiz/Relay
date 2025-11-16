@@ -12,6 +12,7 @@ struct CreateEventView: View {
     
     @State private var name: String = ""
     @State private var location: String = ""
+    @State private var jobPosition: String = ""
     @State private var startsAt: Date = Date()
     @State private var endsAt: Date = Date()
     
@@ -21,6 +22,7 @@ struct CreateEventView: View {
                 Section(header: Text("Event Details")) {
                     TextField("Event Name", text: $name)
                     TextField("Location (e.g., 'Room 101')", text: $location)
+                    TextField("Job Position (e.g., 'Software Engineer')", text: $jobPosition)
                 }
                 
                 Section(header: Text("Event Schedule")) {
@@ -40,9 +42,10 @@ struct CreateEventView: View {
                             name: name,
                             location: location,
                             startsAt: startsAt,
-                            endsAt: endsAt
+                            endsAt: endsAt,
+                            jobPosition: jobPosition
                         )
-                        dismiss() // close sheet
+                        dismiss()
                     }
                 }
             )

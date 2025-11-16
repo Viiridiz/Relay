@@ -43,6 +43,12 @@ struct Candidate: Identifiable, Equatable, Hashable {
     var coverLetterURL: String
     var prompts: [Prompt] // array of answered prompts
     
+    var school: String
+    var languages: [String]
+    var certifications: [String]
+    var hobbies: [String]
+    var avatarName: String
+    
     // init for a new candidate
     init(id: String, name: String) {
         self.id = id
@@ -51,6 +57,13 @@ struct Candidate: Identifiable, Equatable, Hashable {
         self.resumeURL = ""
         self.coverLetterURL = ""
         self.prompts = [] // starts empty
+        
+        // init new stuff
+        self.school = ""
+        self.languages = []
+        self.certifications = []
+        self.hobbies = []
+        self.avatarName = "avatar_default" // default pic
     }
     
     // init from firestore data
@@ -67,6 +80,13 @@ struct Candidate: Identifiable, Equatable, Hashable {
         } else {
             self.prompts = [] // default to empty
         }
+        
+        // load new stuff
+        self.school = dictionary["school"] as? String ?? ""
+        self.languages = dictionary["languages"] as? [String] ?? []
+        self.certifications = dictionary["certifications"] as? [String] ?? []
+        self.hobbies = dictionary["hobbies"] as? [String] ?? []
+        self.avatarName = dictionary["avatarName"] as? String ?? "avatar_default"
     }
     
     // convert model to dictionary for firestore
@@ -77,7 +97,14 @@ struct Candidate: Identifiable, Equatable, Hashable {
             "resumeURL": resumeURL,
             "coverLetterURL": coverLetterURL,
             // save prompts array
-            "prompts": prompts.map { $0.dictionary }
+            "prompts": prompts.map { $0.dictionary },
+            
+            // save new stuff
+            "school": school,
+            "languages": languages,
+            "certifications": certifications,
+            "hobbies": hobbies,
+            "avatarName": avatarName
         ]
     }
 }

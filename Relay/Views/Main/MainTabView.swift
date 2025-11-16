@@ -9,6 +9,10 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    
+    private var unreadNotificationCount: Int {
+        authViewModel.candidateNotifications.filter { !$0.isRead }.count
+    }
 
         var body: some View {
             TabView {
@@ -27,6 +31,31 @@ struct MainTabView: View {
                 }
                 .tabItem {
                     Label("Join Event", systemImage: "qrcode.viewfinder")
+                }
+                
+                // Tab 3: My Events
+                NavigationStack {
+                    CandidateEventsView()
+                }
+                .tabItem {
+                    Label("My Events", systemImage: "calendar")
+                }
+                
+                // Tab 4: Notifications
+                NavigationStack {
+                    NotificationsView()
+                }
+                .tabItem {
+                    Label("Inbox", systemImage: "bell.fill")
+                }
+                .badge(unreadNotificationCount)
+                
+                // Tab 5: Settings 
+                NavigationStack {
+                    SettingsView()
+                }
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
                 }
             }
         }

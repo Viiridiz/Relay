@@ -10,6 +10,15 @@ struct EventDetailView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     let event: Event
     
+    // filters the attendee list against the decisions list
+    private var unreviewedCandidates: [Candidate] {
+        let decidedCandidateIDs = Set(authViewModel.eventDecisions.map { $0.candidateID })
+        
+        return authViewModel.currentEventAttendees.filter { candidate in
+            !decidedCandidateIDs.contains(candidate.id)
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading) {
             Text(event.name)
@@ -35,17 +44,41 @@ struct EventDetailView: View {
             Divider()
                 .padding(.vertical)
             
-            Text("Checked-in Candidates")
-                .font(.headline)
-            
-            List(authViewModel.currentEventAttendees) { candidate in
-                NavigationLink(value: candidate) {
-                    Text(candidate.name)
+            VStack {
+                let count = unreviewedCandidates.count
+                if count > 0 {
+                    Text("You have \(count) new candidate(s) to review.")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else {
+                    Text("All candidates reviewed.")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
+                
+                // link to the review view
+                NavigationLink(value: "start_review") {
+                    Text(count > 0 ? "Start Review (\(count))" : "Review Again")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(count > 0 ? .blue : .gray)
+                        .foregroundStyle(.white)
+                        .cornerRadius(10)
+                }
+                .padding(.top, 4)
+                .disabled(authViewModel.currentEventAttendees.isEmpty) // disable if no one joined
             }
-            .listStyle(.plain)
-            .navigationDestination(for: Candidate.self) { candidate in
-                CandidateProfileDetailView(candidate: candidate)
+            
+            // this destination handles the nav link
+            .navigationDestination(for: String.self) { value in
+                if value == "start_review" {
+
+                    CandidateReviewView(
+                        candidateQueue: unreviewedCandidates,
+                        eventID: event.id ?? ""
+                    )
+                }
             }
             
             Spacer()
@@ -60,20 +93,5 @@ struct EventDetailView: View {
                 }
             }
         }
-    }
-}
-
-#Preview {
-    let fakeEvent = Event(
-        recruiterID: "123",
-        name: "Test Event",
-        location: "Room 101",
-        startsAt: Date(),
-        endsAt: Date()
-    )
-    
-    return NavigationStack {
-        EventDetailView(event: fakeEvent)
-            .environmentObject(AuthViewModel())
     }
 }
