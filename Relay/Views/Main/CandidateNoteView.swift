@@ -15,6 +15,7 @@ struct CandidateNoteView: View {
     
     @State private var note: String = ""
     @State private var showSendOfferView = false // for modal
+    @State private var isNoteExpanded = false // for pill
     
     // get candidate from decision
     private var candidate: Candidate? {
@@ -29,50 +30,79 @@ struct CandidateNoteView: View {
     var body: some View {
         // unwrap the candidate
         if let candidate = candidate {
-            VStack(alignment: .leading, spacing: 0) {
+            ZStack {
+                // main content
                 ScrollView {
-                    CandidateProfileDetailView(candidate: candidate)
+                    VStack(spacing: 24) {
+                        CandidateProfileDetailView(candidate: candidate, isInteractive: true)
+                        
+                        // --- COLLAPSIBLE NOTE PILL ---
+                        ProfileSectionPill(
+                            title: "Recruiter Notes (Private)",
+                            icon: "note.text",
+                            isExpanded: $isNoteExpanded
+                        )
+                        
+                        if isNoteExpanded {
+                            VStack(spacing: 12) {
+                                TextEditor(text: $note)
+                                    .frame(height: 150)
+                                    .padding(4)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(10)
+                                
+                                Button {
+                                    saveNote()
+                                    withAnimation {
+                                        isNoteExpanded = false // close on save
+                                    }
+                                } label: {
+                                    Text("Save Note")
+                                        .font(.headline)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color(.systemGray5))
+                                        .foregroundStyle(.primary)
+                                        .cornerRadius(10)
+                                }
+                                .disabled(authViewModel.isLoading)
+                            }
+                            .padding(.top, 8)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
+                    .padding()
+                    .padding(.bottom, 90)
                 }
                 
-                // note editor
-                VStack(alignment: .leading) {
-                    Text("Recruiter Notes (Private)")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    
-                    TextEditor(text: $note)
-                        .frame(height: 150)
-                        .padding(4)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                        .padding(.horizontal)
+                // --- PINNED SEND OFFER BUTTON ---
+                VStack {
+                    Spacer()
+                    Button {
+                        showSendOfferView = true
+                    } label: {
+                        Text("Send Offer")
+                            .font(.headline.bold())
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(.blue)
+                            .foregroundStyle(.white)
+                            .cornerRadius(15)
+                    }
+                    .padding()
+                    .background(.bar)
                 }
-                .padding(.vertical)
-                .background(.bar)
+                .disabled(authViewModel.isLoading)
+                
             }
             .navigationTitle(candidate.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    // new offer button
-                    Button("Send Offer") {
-                        showSendOfferView = true
-                    }
-                    .disabled(authViewModel.isLoading)
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save Note") {
-                        saveNote()
-                    }
-                    .disabled(authViewModel.isLoading)
-                }
             }
             .onAppear {
                 self.note = decision.note ?? ""
             }
             .sheet(isPresented: $showSendOfferView) {
-                // present the new sheet
                 SendOfferView(
                     candidateID: decision.candidateID,
                     jobPosition: event?.jobPosition ?? "NA"
@@ -93,38 +123,5 @@ struct CandidateNoteView: View {
         Task {
             await authViewModel.updateDecisionNote(decisionID: decisionID, note: note)
         }
-    }
-}
-
-#Preview {
-    let vm = AuthViewModel()
-    
-    // 1. candidate
-    var candidate = Candidate(id: "c1", name: "John Appleseed")
-    candidate.school = "Preview University"
-    candidate.avatarName = "avatar_1"
-    candidate.prompts = [Prompt(question: "My proudest project is...", answer: "This app.")]
-    
-    // 2. event
-    var event = Event(recruiterID: "r1", name: "Preview Event", location: "Room 101", startsAt: Date(), endsAt: Date(), jobPosition: "iOS Developer")
-    event.id = "e1"
-    
-    // 3. decision
-    var decision = Decision(
-        eventID: "e1", // matches event
-        candidateID: "c1", // matches candidate
-        recruiterID: "r1",
-        decision: .interested
-    )
-    decision.id = "d1"
-    decision.note = "Looks promising, good project."
-    
-    vm.allInterestedCandidates = [candidate]
-    vm.recruiterEvents = [event]
-    vm.allRecruiterDecisions = [decision]
-    
-    return NavigationStack {
-        CandidateNoteView(decision: decision)
-            .environmentObject(vm)
     }
 }

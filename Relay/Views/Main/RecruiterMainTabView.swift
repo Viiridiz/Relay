@@ -29,17 +29,8 @@ struct RecruiterMainTabView: View {
             
             // tab 3: profile
             NavigationStack {
-                // show spinner or profile
-                if let profile = authViewModel.recruiterProfile {
-                    VStack {
-                        Text("Welcome, \(profile.name)")
-                            .font(.largeTitle)
-                        Text(profile.email)
-                        Spacer()
-                    }
-                    .padding()
-                    .navigationTitle("Profile")
-                    // removed signout button, its in settings
+                if authViewModel.recruiterProfile != nil {
+                    RecruiterProfileView()
                 } else {
                     ProgressView()
                 }

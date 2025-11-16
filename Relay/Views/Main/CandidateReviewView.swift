@@ -21,8 +21,7 @@ struct CandidateReviewView: View {
     var body: some View {
         VStack {
             if let candidate = currentCandidate {
-                // show the profile
-                CandidateProfileDetailView(candidate: candidate)
+                CandidateProfileDetailView(candidate: candidate, isInteractive: false)
                 
                 // buttons
                 HStack(spacing: 20) {

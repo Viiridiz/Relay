@@ -15,6 +15,8 @@ struct JoinEventView: View {
     
     var body: some View {
         VStack(spacing: 20) {
+            Spacer()
+            
             Text("Join an Event")
                 .font(.largeTitle)
                 .fontWeight(.bold)
@@ -61,6 +63,7 @@ struct JoinEventView: View {
                     .foregroundStyle(.red)
             }
             
+            Spacer()
             Spacer()
         }
         .padding()

@@ -32,7 +32,6 @@ class AuthViewModel: ObservableObject {
     @Published var errorMessage = ""
 
     private var db = Firestore.firestore()
-    // listener handle
     private var notificationListener: ListenerRegistration?
 
     init() {
@@ -104,7 +103,6 @@ class AuthViewModel: ObservableObject {
     }
 
     func signOut() {
-        // stop listening
         notificationListener?.remove()
         notificationListener = nil
         
@@ -139,7 +137,7 @@ class AuthViewModel: ObservableObject {
             if user?.userRole == .candidate {
                 await fetchCandidateProfile(uid: uid)
                 await fetchCandidateEvents(uid: uid)
-                listenForCandidateNotifications(uid: uid) // changed
+                listenForCandidateNotifications(uid: uid)
             } else if user?.userRole == .recruiter {
                 await fetchRecruiterProfile(uid: uid)
                 await fetchRecruiterEvents(recruiterID: uid)
@@ -208,9 +206,7 @@ class AuthViewModel: ObservableObject {
         self.isLoading = false
     }
     
-    // changed to real-time listener
     func listenForCandidateNotifications(uid: String) {
-        // clear old listener
         notificationListener?.remove()
         
         let query = db.collection("notifications")
@@ -223,10 +219,9 @@ class AuthViewModel: ObservableObject {
                 return
             }
             
-            // parse and include doc ID
             self.candidateNotifications = snapshot.documents.compactMap { doc in
                 var notification = Notification(dictionary: doc.data())
-                notification?.id = doc.documentID // make sure id is set
+                notification?.id = doc.documentID
                 return notification
             }
         }
@@ -242,6 +237,21 @@ class AuthViewModel: ObservableObject {
         } catch {
             print("DEBUG: Failed to fetch recruiter profile: \(error.localizedDescription)")
         }
+    }
+    
+    // new function
+    func updateRecruiterProfile(_ profile: Recruiter) async {
+        guard let uid = self.currentUser?.id else { return }
+        isLoading = true
+        do {
+            let data = profile.dictionary
+            try await db.collection("recruiters").document(uid).setData(data, merge: true)
+            self.recruiterProfile = profile
+        } catch {
+            self.errorMessage = error.localizedDescription
+            print("DEBUG: Failed to update recruiter profile: \(error.localizedDescription)")
+        }
+        isLoading = false
     }
     
     func fetchRecruiterEvents(recruiterID: String) async {
@@ -529,14 +539,12 @@ class AuthViewModel: ObservableObject {
     }
     
     func markNotificationAsRead(notificationID: String) async {
-        // update remote
         do {
             try await db.collection("notifications").document(notificationID).setData(
                 ["isRead": true],
                 merge: true
             )
             
-            // update local
             if let index = self.candidateNotifications.firstIndex(where: { $0.id == notificationID }) {
                 self.candidateNotifications[index].isRead = true
             }

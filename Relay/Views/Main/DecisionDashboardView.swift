@@ -11,45 +11,38 @@ struct DecisionDashboardView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     
     var body: some View {
-        VStack {
-            if authViewModel.isLoading {
-                ProgressView()
-            } else if authViewModel.allRecruiterDecisions.isEmpty {
-                Text("No 'Interested' Candidates Yet")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-            } else {
-                // iterate decisions, not candidates
-                List(authViewModel.allRecruiterDecisions) { decision in
-                    
-                    // find the matching data
-                    let candidate = authViewModel.allInterestedCandidates.first { $0.id == decision.candidateID }
-                    let event = authViewModel.recruiterEvents.first { $0.id == decision.eventID }
-                    
-                    // navigate with the decision
-                    NavigationLink(value: decision) {
-                        HStack {
-                            Image(candidate?.avatarName ?? "avatar_1")
-                                .resizable()
-                                .frame(width: 44, height: 44)
-                                .clipShape(Circle())
-                            
-                            VStack(alignment: .leading) {
-                                Text(candidate?.name ?? "Unknown Candidate")
-                                    .font(.headline)
-                                Text(event?.name ?? "Unknown Event") // show event name
-                                    .font(.callout)
-                                    .foregroundStyle(.secondary)
-                                Text(event?.jobPosition ?? "No Position") // show job
-                                    .font(.callout)
-                                    .foregroundStyle(.blue)
-                            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if authViewModel.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 50)
+                } else if authViewModel.allRecruiterDecisions.isEmpty {
+                    Text("No 'Interested' Candidates Yet")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 50)
+                } else {
+                    // iterate decisions
+                    ForEach(authViewModel.allRecruiterDecisions) { decision in
+                        
+                        // find the matching data
+                        let candidate = authViewModel.allInterestedCandidates.first { $0.id == decision.candidateID }
+                        let event = authViewModel.recruiterEvents.first { $0.id == decision.eventID }
+                        
+                        // navigate with the decision
+                        NavigationLink(value: decision) {
+                            InterestedCandidatePill(
+                                candidate: candidate,
+                                event: event
+                            )
                         }
-                        .padding(.vertical, 4)
+                        .buttonStyle(.plain)
                     }
                 }
-                .listStyle(.plain)
             }
+            .padding()
         }
         .navigationTitle("Interested Candidates")
         .navigationDestination(for: Decision.self) { decision in
@@ -57,6 +50,45 @@ struct DecisionDashboardView: View {
         }
     }
 }
+
+struct InterestedCandidatePill: View {
+    let candidate: Candidate?
+    let event: Event?
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(candidate?.avatarName ?? "avatar_1")
+                .resizable()
+                .frame(width: 50, height: 50)
+                .clipShape(Circle())
+                .background(Circle().fill(Color(.systemGray5)))
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(candidate?.name ?? "Unknown Candidate")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                
+                Text(event?.jobPosition ?? "No Position")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary) // fixed blue
+                
+                Text(event?.name ?? "Unknown Event")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(15)
+    }
+}
+
 
 #Preview {
     let vm = AuthViewModel()
