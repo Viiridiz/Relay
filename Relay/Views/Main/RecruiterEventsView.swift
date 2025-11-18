@@ -13,7 +13,7 @@ struct RecruiterEventsView: View {
     var body: some View {
         VStack {
             List(authViewModel.recruiterEvents) { event in
-                NavigationLink(value: event) {
+                NavigationLink(destination: EventDetailView(event: event)) {
                     VStack(alignment: .leading) {
                         Text(event.name)
                             .font(.headline)
@@ -25,9 +25,6 @@ struct RecruiterEventsView: View {
                             .bold()
                     }
                 }
-            }
-            .navigationDestination(for: Event.self) { event in
-                EventDetailView(event: event)
             }
         }
         .navigationTitle("Your Events")

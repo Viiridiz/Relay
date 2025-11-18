@@ -7,14 +7,14 @@
 import Foundation
 import FirebaseFirestore
 
-struct Event: Identifiable, Hashable {
+struct Event: Identifiable, Codable {
     @DocumentID var id: String?
     let recruiterID: String
     let name: String
     let location: String
     let startsAt: Date
     let endsAt: Date
-    var eventCode: String? // the 6-digit code
+    var eventCode: String?
     var jobPosition: String
     
     // init for a new one
@@ -42,12 +42,9 @@ struct Event: Identifiable, Hashable {
         self.startsAt = startsAtTimestamp.dateValue()
         self.endsAt = endsAtTimestamp.dateValue()
         self.eventCode = dictionary["eventCode"] as? String
-        
-        // load new
         self.jobPosition = dictionary["jobPosition"] as? String ?? ""
     }
     
-    // convert to firestore dict
     var dictionary: [String: Any] {
         return [
             "recruiterID": recruiterID,

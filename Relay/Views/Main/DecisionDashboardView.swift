@@ -24,15 +24,12 @@ struct DecisionDashboardView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 50)
                 } else {
-                    // iterate decisions
                     ForEach(authViewModel.allRecruiterDecisions) { decision in
                         
-                        // find the matching data
                         let candidate = authViewModel.allInterestedCandidates.first { $0.id == decision.candidateID }
                         let event = authViewModel.recruiterEvents.first { $0.id == decision.eventID }
                         
-                        // navigate with the decision
-                        NavigationLink(value: decision) {
+                        NavigationLink(destination: CandidateNoteView(decision: decision)) {
                             InterestedCandidatePill(
                                 candidate: candidate,
                                 event: event
@@ -45,11 +42,11 @@ struct DecisionDashboardView: View {
             .padding()
         }
         .navigationTitle("Interested Candidates")
-        .navigationDestination(for: Decision.self) { decision in
-            CandidateNoteView(decision: decision)
-        }
+        // Removed .navigationDestination modifier
     }
 }
+
+// --- HELPER VIEW (UNCHANGED) ---
 
 struct InterestedCandidatePill: View {
     let candidate: Candidate?
@@ -70,7 +67,7 @@ struct InterestedCandidatePill: View {
                 
                 Text(event?.jobPosition ?? "No Position")
                     .font(.subheadline)
-                    .foregroundStyle(.primary) // fixed blue
+                    .foregroundStyle(.primary)
                 
                 Text(event?.name ?? "Unknown Event")
                     .font(.caption)

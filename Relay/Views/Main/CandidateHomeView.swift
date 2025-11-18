@@ -331,9 +331,7 @@ struct CandidateHomeView: View {
 
 //
 // --- ALL HELPER VIEWS AND PREVIEWS BELOW ---
-//
 
-// NOTE: ProfileSectionPill is REMOVED from here because it is in its own file now.
 
 struct AddPromptButton: View {
     var action: () -> Void
@@ -344,12 +342,13 @@ struct AddPromptButton: View {
                     .font(.callout)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
+                
                 Spacer()
+                
                 Image(systemName: "plus")
                     .foregroundStyle(.primary)
             }
             .padding()
-            .frame(maxWidth: .infinity)
             .background(Color(.systemGray6))
             .cornerRadius(10)
         }

@@ -15,7 +15,7 @@ struct EventDetailView: View {
         let decidedCandidateIDs = Set(authViewModel.eventDecisions.map { $0.candidateID })
         
         return authViewModel.currentEventAttendees.filter { candidate in
-            !decidedCandidateIDs.contains(candidate.id)
+            !decidedCandidateIDs.contains(candidate.id ?? "")
         }
     }
     
@@ -56,8 +56,13 @@ struct EventDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
                 
-                // link to the review view
-                NavigationLink(value: "start_review") {
+                // OLD STYLE: Direct Destination
+                NavigationLink(
+                    destination: CandidateReviewView(
+                        candidateQueue: unreviewedCandidates,
+                        eventID: event.id ?? ""
+                    )
+                ) {
                     Text(count > 0 ? "Start Review (\(count))" : "Review Again")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
@@ -67,18 +72,7 @@ struct EventDetailView: View {
                         .cornerRadius(10)
                 }
                 .padding(.top, 4)
-                .disabled(authViewModel.currentEventAttendees.isEmpty) // disable if no one joined
-            }
-            
-            // this destination handles the nav link
-            .navigationDestination(for: String.self) { value in
-                if value == "start_review" {
-
-                    CandidateReviewView(
-                        candidateQueue: unreviewedCandidates,
-                        eventID: event.id ?? ""
-                    )
-                }
+                .disabled(authViewModel.currentEventAttendees.isEmpty) 
             }
             
             Spacer()

@@ -27,7 +27,9 @@ struct ProfileSectionPill: View {
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(.primary)
-                Spacer()
+                
+                Spacer() 
+                
                 Image(systemName: "chevron.right")
                     .font(.caption.bold())
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))

@@ -9,7 +9,6 @@ import Combine
 import FirebaseAuth
 import FirebaseFirestore
 
-@MainActor
 class AuthViewModel: ObservableObject {
 
     @Published var userSession: FirebaseAuth.User?
@@ -42,26 +41,39 @@ class AuthViewModel: ObservableObject {
     }
     
     func signIn(email: String, password: String) async {
-        isLoading = true
-        errorMessage = ""
+        await MainActor.run {
+            isLoading = true
+            errorMessage = ""
+        }
+        
         do {
             let authResult = try await Auth.auth().signIn(withEmail: email, password: password)
-            self.userSession = authResult.user
+            await MainActor.run {
+                self.userSession = authResult.user
+            }
             await fetchCurrentUser()
         } catch {
-            self.errorMessage = error.localizedDescription
-            print("DEBUG: Failed to sign in: \(error.localizedDescription)")
+            await MainActor.run {
+                self.errorMessage = error.localizedDescription
+                print("DEBUG: Failed to sign in: \(error.localizedDescription)")
+            }
         }
-        isLoading = false
+        
+        await MainActor.run { isLoading = false }
     }
 
     func signUp(email: String, password: String, name: String, role: UserAccount.UserRole) async {
-        isLoading = true
-        errorMessage = ""
+        await MainActor.run {
+            isLoading = true
+            errorMessage = ""
+        }
+        
         do {
             let authResult = try await Auth.auth().createUser(withEmail: email, password: password)
             let uid = authResult.user.uid
-            self.userSession = authResult.user
+            await MainActor.run {
+                self.userSession = authResult.user
+            }
 
             let newUser = UserAccount(id: uid, email: email, name: name, userRole: role)
             let userData = newUser.dictionary
@@ -75,7 +87,7 @@ class AuthViewModel: ObservableObject {
                 let candidateRef = db.collection("candidates").document(uid)
                 batch.setData(newCandidate.dictionary, forDocument: candidateRef)
                 
-                self.candidateProfile = newCandidate
+                await MainActor.run { self.candidateProfile = newCandidate }
                 
             } else if role == .recruiter {
                 let newRecruiter = Recruiter(
@@ -88,18 +100,20 @@ class AuthViewModel: ObservableObject {
                 let recruiterRef = db.collection("recruiters").document(uid)
                 batch.setData(newRecruiter.dictionary, forDocument: recruiterRef)
                 
-                self.recruiterProfile = newRecruiter
+                await MainActor.run { self.recruiterProfile = newRecruiter }
             }
             
             try await batch.commit()
             
-            self.currentUser = newUser
+            await MainActor.run { self.currentUser = newUser }
             
         } catch {
-            self.errorMessage = error.localizedDescription
-            print("DEBUG: Failed to sign up: \(error.localizedDescription)")
+            await MainActor.run {
+                self.errorMessage = error.localizedDescription
+                print("DEBUG: Failed to sign up: \(error.localizedDescription)")
+            }
         }
-        isLoading = false
+        await MainActor.run { isLoading = false }
     }
 
     func signOut() {
@@ -108,17 +122,21 @@ class AuthViewModel: ObservableObject {
         
         do {
             try Auth.auth().signOut()
-            self.userSession = nil
-            self.currentUser = nil
-            self.candidateProfile = nil
-            self.candidateEvents = []
-            self.candidateNotifications = []
-            self.recruiterProfile = nil
-            self.recruiterEvents = []
-            self.currentEventAttendees = []
-            self.eventDecisions = []
-            self.allRecruiterDecisions = []
-            self.allInterestedCandidates = []
+            Task {
+                await MainActor.run {
+                    self.userSession = nil
+                    self.currentUser = nil
+                    self.candidateProfile = nil
+                    self.candidateEvents = []
+                    self.candidateNotifications = []
+                    self.recruiterProfile = nil
+                    self.recruiterEvents = []
+                    self.currentEventAttendees = []
+                    self.eventDecisions = []
+                    self.allRecruiterDecisions = []
+                    self.allInterestedCandidates = []
+                }
+            }
         } catch {
             print("DEBUG: Failed to sign out: \(error.localizedDescription)")
         }
@@ -132,7 +150,7 @@ class AuthViewModel: ObservableObject {
             guard let data = snapshot.data() else { return }
             
             let user = UserAccount(id: snapshot.documentID, dictionary: data)
-            self.currentUser = user
+            await MainActor.run { self.currentUser = user }
             
             if user?.userRole == .candidate {
                 await fetchCandidateProfile(uid: uid)
@@ -155,29 +173,34 @@ class AuthViewModel: ObservableObject {
         do {
             let snapshot = try await db.collection("candidates").document(uid).getDocument()
             guard let data = snapshot.data() else { return }
-            self.candidateProfile = Candidate(id: snapshot.documentID, dictionary: data)
+            let profile = Candidate(id: snapshot.documentID, dictionary: data)
+            await MainActor.run { self.candidateProfile = profile }
         } catch {
             print("DEBUG: Failed to fetch candidate profile: \(error.localizedDescription)")
         }
     }
     
     func updateCandidateProfile(_ profile: Candidate) async {
-        let uid = profile.id
-        isLoading = true
+        guard let uid = profile.id else { return }
+        await MainActor.run { isLoading = true }
         do {
             let data = profile.dictionary
             try await db.collection("candidates").document(uid).setData(data, merge: true)
-            self.candidateProfile = profile
+            await MainActor.run { self.candidateProfile = profile }
         } catch {
-            self.errorMessage = error.localizedDescription
-            print("DEBUG: Failed to update profile: \(error.localizedDescription)")
+            await MainActor.run {
+                self.errorMessage = error.localizedDescription
+                print("DEBUG: Failed to update profile: \(error.localizedDescription)")
+            }
         }
-        isLoading = false
+        await MainActor.run { isLoading = false }
     }
     
     func fetchCandidateEvents(uid: String) async {
-        self.isLoading = true
-        self.candidateEvents = []
+        await MainActor.run {
+            self.isLoading = true
+            self.candidateEvents = []
+        }
         
         do {
             let snapshot = try await db.collection("eventAttendances")
@@ -193,17 +216,18 @@ class AuthViewModel: ObservableObject {
                     .whereField(FieldPath.documentID(), in: eventIDs)
                     .getDocuments()
                 
-                self.candidateEvents = eventsSnapshot.documents.compactMap { doc in
+                let events = eventsSnapshot.documents.compactMap { doc in
                     var event = Event(dictionary: doc.data())
                     event?.id = doc.documentID
                     return event
                 }
+                await MainActor.run { self.candidateEvents = events }
             }
         } catch {
             print("DEBUG: Failed to fetch candidate events: \(error.localizedDescription)")
         }
         
-        self.isLoading = false
+        await MainActor.run { self.isLoading = false }
     }
     
     func listenForCandidateNotifications(uid: String) {
@@ -214,15 +238,16 @@ class AuthViewModel: ObservableObject {
             .order(by: "createdAt", descending: true)
         
         self.notificationListener = query.addSnapshotListener { snapshot, error in
-            guard let snapshot = snapshot else {
-                print("DEBUG: Error fetching notifications: \(error?.localizedDescription ?? "unknown")")
-                return
-            }
+            guard let snapshot = snapshot else { return }
             
-            self.candidateNotifications = snapshot.documents.compactMap { doc in
+            let notifications = snapshot.documents.compactMap { doc in
                 var notification = Notification(dictionary: doc.data())
                 notification?.id = doc.documentID
                 return notification
+            }
+            
+            Task { @MainActor in
+                self.candidateNotifications = notifications
             }
         }
     }
@@ -233,49 +258,54 @@ class AuthViewModel: ObservableObject {
         do {
             let snapshot = try await db.collection("recruiters").document(uid).getDocument()
             guard let data = snapshot.data() else { return }
-            self.recruiterProfile = Recruiter(id: snapshot.documentID, dictionary: data)
+            let profile = Recruiter(id: snapshot.documentID, dictionary: data)
+            await MainActor.run { self.recruiterProfile = profile }
         } catch {
             print("DEBUG: Failed to fetch recruiter profile: \(error.localizedDescription)")
         }
     }
     
-    // new function
     func updateRecruiterProfile(_ profile: Recruiter) async {
         guard let uid = self.currentUser?.id else { return }
-        isLoading = true
+        await MainActor.run { isLoading = true }
         do {
             let data = profile.dictionary
             try await db.collection("recruiters").document(uid).setData(data, merge: true)
-            self.recruiterProfile = profile
+            await MainActor.run { self.recruiterProfile = profile }
         } catch {
-            self.errorMessage = error.localizedDescription
-            print("DEBUG: Failed to update recruiter profile: \(error.localizedDescription)")
+            await MainActor.run {
+                self.errorMessage = error.localizedDescription
+                print("DEBUG: Failed to update recruiter profile: \(error.localizedDescription)")
+            }
         }
-        isLoading = false
+        await MainActor.run { isLoading = false }
     }
     
     func fetchRecruiterEvents(recruiterID: String) async {
-        self.isLoading = true
-        self.recruiterEvents = []
+        await MainActor.run {
+            self.isLoading = true
+            self.recruiterEvents = []
+        }
         do {
             let snapshot = try await db.collection("events")
                                       .whereField("recruiterID", isEqualTo: recruiterID)
                                       .getDocuments()
             
-            self.recruiterEvents = snapshot.documents.compactMap { doc in
+            let events = snapshot.documents.compactMap { doc in
                 var event = Event(dictionary: doc.data())
                 event?.id = doc.documentID
                 return event
             }
+            await MainActor.run { self.recruiterEvents = events }
         } catch {
             print("DEBUG: Failed to fetch events: \(error.localizedDescription)")
         }
-        self.isLoading = false
+        await MainActor.run { self.isLoading = false }
     }
     
     func createEvent(name: String, location: String, startsAt: Date, endsAt: Date, jobPosition: String) async {
         guard let uid = currentUser?.id else { return }
-        isLoading = true
+        await MainActor.run { isLoading = true }
         do {
             var newEvent = Event(
                 recruiterID: uid,
@@ -293,12 +323,15 @@ class AuthViewModel: ObservableObject {
             let docRef = try await db.collection("events").addDocument(data: data)
             
             newEvent.id = docRef.documentID
-            self.recruiterEvents.append(newEvent)
+            
+            await MainActor.run { self.recruiterEvents.append(newEvent) }
         } catch {
-            self.errorMessage = error.localizedDescription
-            print("DEBUG: Failed to create event: \(error.localizedDescription)")
+            await MainActor.run {
+                self.errorMessage = error.localizedDescription
+                print("DEBUG: Failed to create event: \(error.localizedDescription)")
+            }
         }
-        isLoading = false
+        await MainActor.run { isLoading = false }
     }
     
     private func generateEventCode() -> String {
@@ -308,8 +341,10 @@ class AuthViewModel: ObservableObject {
     
     func joinEvent(eventCode: String) async -> Event? {
             guard let uid = currentUser?.id else { return nil }
-            self.isLoading = true
-            self.errorMessage = ""
+            await MainActor.run {
+                self.isLoading = true
+                self.errorMessage = ""
+            }
             
             do {
                 let snapshot = try await db.collection("events")
@@ -318,8 +353,10 @@ class AuthViewModel: ObservableObject {
                 
                 guard let eventDoc = snapshot.documents.first,
                       var event = Event(dictionary: eventDoc.data()) else {
-                    self.errorMessage = "Invalid event code."
-                    self.isLoading = false
+                    await MainActor.run {
+                        self.errorMessage = "Invalid event code."
+                        self.isLoading = false
+                    }
                     return nil
                 }
                 event.id = eventDoc.documentID
@@ -330,24 +367,29 @@ class AuthViewModel: ObservableObject {
                 
                 try await db.collection("eventAttendances").addDocument(data: data)
                 
-                self.candidateEvents.append(event)
-                
+                await MainActor.run {
+                    self.candidateEvents.append(event)
+                    self.isLoading = false
+                }
                 print("Successfully joined event!")
-                self.isLoading = false
                 return event
                 
             } catch {
-                self.errorMessage = "Failed to join event. Try again."
+                await MainActor.run {
+                    self.errorMessage = "Failed to join event. Try again."
+                    self.isLoading = false
+                }
                 print("DEBUG: Failed to join event: \(error.localizedDescription)")
-                self.isLoading = false
                 return nil
             }
         }
     
     func fetchEventAttendees(eventID: String) async {
-        self.isLoading = true
-        self.currentEventAttendees = []
-        self.eventDecisions = []
+        await MainActor.run {
+            self.isLoading = true
+            self.currentEventAttendees = []
+            self.eventDecisions = []
+        }
         
         do {
             let snapshot = try await db.collection("eventAttendances")
@@ -363,17 +405,18 @@ class AuthViewModel: ObservableObject {
                                                      .whereField(FieldPath.documentID(), in: candidateIDs)
                                                      .getDocuments()
                 
-                self.currentEventAttendees = profilesSnapshot.documents.compactMap { doc in
+                let attendees = profilesSnapshot.documents.compactMap { doc in
                     return Candidate(id: doc.documentID, dictionary: doc.data())
                 }
+                await MainActor.run { self.currentEventAttendees = attendees }
             }
             
             await fetchEventDecisions(eventID: eventID)
             
         } catch {
-            self.errorMessage = "Failed to fetch attendees: \(error.localizedDescription)"
+            await MainActor.run { self.errorMessage = "Failed to fetch attendees: \(error.localizedDescription)" }
         }
-        self.isLoading = false
+        await MainActor.run { self.isLoading = false }
     }
     
     // MARK: - Decision & Notification Functions
@@ -399,7 +442,6 @@ class AuthViewModel: ObservableObject {
     }
     
     func fetchEventDecisions(eventID: String) async {
-        
         guard let recruiterID = self.currentUser?.id else { return }
         
         do {
@@ -408,20 +450,18 @@ class AuthViewModel: ObservableObject {
                 .whereField("recruiterID", isEqualTo: recruiterID)
                 .getDocuments()
             
-            self.eventDecisions = snapshot.documents.compactMap { doc in
+            let decisions = snapshot.documents.compactMap { doc in
                 return self.parseDecision(doc: doc)
             }
+            await MainActor.run { self.eventDecisions = decisions }
         } catch {
             print("DEBUG: Failed to fetch decisions: \(error.localizedDescription)")
-            self.errorMessage = "Failed to fetch decisions: \(error.localizedDescription)"
+            await MainActor.run { self.errorMessage = "Failed to fetch decisions: \(error.localizedDescription)" }
         }
     }
     
     func saveDecision(candidateID: String, eventID: String, decision: Decision.DecisionType) async {
-        guard let recruiterID = self.currentUser?.id else {
-            print("DEBUG: No recruiter ID found, can't save decision.")
-            return
-        }
+        guard let recruiterID = self.currentUser?.id else { return }
         
         var newDecision = Decision(
             eventID: eventID,
@@ -435,25 +475,30 @@ class AuthViewModel: ObservableObject {
             let docRef = try await db.collection("decisions").addDocument(data: data)
             newDecision.id = docRef.documentID
             
-            self.eventDecisions.append(newDecision)
-            if newDecision.decision == .interested {
-                self.allRecruiterDecisions.append(newDecision)
-                if !self.allInterestedCandidates.contains(where: { $0.id == candidateID }) {
-                    await fetchCandidateProfileForDashboard(uid: candidateID)
+            await MainActor.run {
+                self.eventDecisions.append(newDecision)
+                if newDecision.decision == .interested {
+                    self.allRecruiterDecisions.append(newDecision)
+
+                    if !self.allInterestedCandidates.contains(where: { $0.id == candidateID }) {
+                        Task { await self.fetchCandidateProfileForDashboard(uid: candidateID) }
+                    }
                 }
             }
             
         } catch {
             print("DEBUG: Failed to save decision: \(error.localizedDescription)")
-            self.errorMessage = "Failed to save decision: \(error.localizedDescription)"
+            await MainActor.run { self.errorMessage = "Failed to save decision: \(error.localizedDescription)" }
         }
     }
     
     func fetchAllInterestedData() async {
         guard let recruiterID = self.currentUser?.id else { return }
-        self.isLoading = true
-        self.allRecruiterDecisions = []
-        self.allInterestedCandidates = []
+        await MainActor.run {
+            self.isLoading = true
+            self.allRecruiterDecisions = []
+            self.allInterestedCandidates = []
+        }
         
         do {
             let snapshot = try await db.collection("decisions")
@@ -461,64 +506,66 @@ class AuthViewModel: ObservableObject {
                 .whereField("decision", isEqualTo: "interested")
                 .getDocuments()
             
-            self.allRecruiterDecisions = snapshot.documents.compactMap { doc in
+            let decisions = snapshot.documents.compactMap { doc in
                 return self.parseDecision(doc: doc)
             }
             
-            let candidateIDs = Set(self.allRecruiterDecisions.map { $0.candidateID })
+            await MainActor.run { self.allRecruiterDecisions = decisions }
+            
+            let candidateIDs = Set(decisions.map { $0.candidateID })
             
             if !candidateIDs.isEmpty {
                 let profilesSnapshot = try await db.collection("candidates")
                     .whereField(FieldPath.documentID(), in: Array(candidateIDs))
                     .getDocuments()
                 
-                self.allInterestedCandidates = profilesSnapshot.documents.compactMap { doc in
+                let profiles = profilesSnapshot.documents.compactMap { doc in
                     return Candidate(id: doc.documentID, dictionary: doc.data())
                 }
+                await MainActor.run { self.allInterestedCandidates = profiles }
             }
         } catch {
             print("DEBUG: Failed to fetch all interested data: \(error.localizedDescription)")
-            self.errorMessage = "Failed to fetch dashboard data."
+            await MainActor.run { self.errorMessage = "Failed to fetch dashboard data." }
         }
-        self.isLoading = false
+        await MainActor.run { self.isLoading = false }
     }
     
     private func fetchCandidateProfileForDashboard(uid: String) async {
         do {
             let snapshot = try await db.collection("candidates").document(uid).getDocument()
             guard let data = snapshot.data() else { return }
-            let candidate = Candidate(id: (snapshot.documentID), dictionary: data)
-            self.allInterestedCandidates.append(candidate)
+            let candidate = Candidate(id: snapshot.documentID, dictionary: data)
+            await MainActor.run { self.allInterestedCandidates.append(candidate) }
         } catch {
             print("DEBUG: Failed to fetch single candidate profile: \(error.localizedDescription)")
         }
     }
 
     func updateDecisionNote(decisionID: String, note: String) async {
-        self.isLoading = true
+        await MainActor.run { self.isLoading = true }
         do {
             try await db.collection("decisions").document(decisionID).setData(
                 ["note": note],
                 merge: true
             )
             
-            if let index = self.allRecruiterDecisions.firstIndex(where: { $0.id == decisionID }) {
-                self.allRecruiterDecisions[index].note = note
+            await MainActor.run {
+                if let index = self.allRecruiterDecisions.firstIndex(where: { $0.id == decisionID }) {
+                    self.allRecruiterDecisions[index].note = note
+                }
             }
         } catch {
             print("DEBUG: Failed to update note: \(error.localizedDescription)")
-            self.errorMessage = "Failed to save note."
+            await MainActor.run { self.errorMessage = "Failed to save note." }
         }
-        self.isLoading = false
+        await MainActor.run { self.isLoading = false }
     }
     
     func sendOffer(candidateID: String, jobPosition: String, message: String) async {
-        guard let recruiter = self.recruiterProfile else {
-            print("DEBUG: No recruiter profile found.")
-            return
-        }
+        guard let recruiter = self.recruiterProfile else { return }
         
-        self.isLoading = true
+        await MainActor.run { self.isLoading = true }
         
         let notification = Notification(
             candidateID: candidateID,
@@ -532,10 +579,10 @@ class AuthViewModel: ObservableObject {
             try await db.collection("notifications").addDocument(data: notification.dictionary)
         } catch {
             print("DEBUG: Failed to send offer: \(error.localizedDescription)")
-            self.errorMessage = "Failed to send offer."
+            await MainActor.run { self.errorMessage = "Failed to send offer." }
         }
         
-        self.isLoading = false
+        await MainActor.run { self.isLoading = false }
     }
     
     func markNotificationAsRead(notificationID: String) async {
@@ -545,8 +592,10 @@ class AuthViewModel: ObservableObject {
                 merge: true
             )
             
-            if let index = self.candidateNotifications.firstIndex(where: { $0.id == notificationID }) {
-                self.candidateNotifications[index].isRead = true
+            await MainActor.run {
+                if let index = self.candidateNotifications.firstIndex(where: { $0.id == notificationID }) {
+                    self.candidateNotifications[index].isRead = true
+                }
             }
         } catch {
             print("DEBUG: Failed to mark as read: \(error.localizedDescription)")

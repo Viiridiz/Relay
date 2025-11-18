@@ -80,7 +80,7 @@ struct CandidateProfileDetailView: View {
 
                 // --- PROMPT
                 VStack(alignment: .leading, spacing: 16) {
-                    ForEach(candidate.prompts, id: \.self) { prompt in
+                    ForEach(candidate.prompts) { prompt in
                         PromptDisplayCard(prompt: prompt)
                     }
                 }

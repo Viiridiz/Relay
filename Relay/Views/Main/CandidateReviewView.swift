@@ -79,24 +79,25 @@ struct CandidateReviewView: View {
         }
         .navigationTitle(currentCandidate?.name ?? "Review Complete")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true) // force 'Done' button
+        .navigationBarBackButtonHidden(true)
     }
     
     func makeDecision(decision: Decision.DecisionType) {
-        guard let candidate = currentCandidate else { return }
-        
-        // save to firebase
-        Task {
-            await authViewModel.saveDecision(
-                candidateID: candidate.id,
-                eventID: eventID,
-                decision: decision
-            )
+            
+            guard let candidate = currentCandidate, let candidateID = candidate.id else { return }
+            
+            Task {
+                await authViewModel.saveDecision(
+                    candidateID: candidateID,
+                    eventID: eventID,
+                    decision: decision
+                )
+            }
+
+            withAnimation {
+                if !candidateQueue.isEmpty {
+                    _ = candidateQueue.removeFirst()
+                }
+            }
         }
-        
-        // next candidate
-        withAnimation {
-            _ = candidateQueue.removeFirst()
-        }
-    }
 }
