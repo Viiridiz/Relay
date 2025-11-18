@@ -15,7 +15,7 @@ enum SheetContext: Identifiable {
         case .selectPrompt:
             return "select"
         case .editPrompt(let prompt):
-            return "edit:\(prompt.id)"
+            return prompt.id
         }
     }
 }
@@ -24,11 +24,13 @@ enum SheetContext: Identifiable {
 struct CandidateHomeView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     
+    // existing
     @State private var name: String = ""
     @State private var phone: String = ""
     @State private var resumeURL: String = ""
     @State private var coverLetterURL: String = ""
     
+    // new stuff
     @State private var school: String = ""
     @State private var languages: String = ""
     @State private var certifications: String = ""
@@ -71,15 +73,22 @@ struct CandidateHomeView: View {
         ])
     ]
     
-    // handles the exclusive accordion
-    func toggleSection(_ section: ActiveSection) {
-        withAnimation(.spring(duration: 0.3)) {
-            if activeSection == section {
-                activeSection = nil
-            } else {
-                activeSection = section
+   
+    func sectionBinding(_ section: ActiveSection) -> Binding<Bool> {
+        Binding(
+            get: { activeSection == section },
+            set: { isOpen in
+                withAnimation(.spring(duration: 0.3)) {
+                    if isOpen {
+                        activeSection = section
+                    } else {
+                        if activeSection == section {
+                            activeSection = nil
+                        }
+                    }
+                }
             }
-        }
+        )
     }
     
     var body: some View {
@@ -109,14 +118,13 @@ struct CandidateHomeView: View {
                         }
                         
                         // --- COLLAPSIBLE PILL SECTIONS ---
+                        // We use the shared ProfileSectionPill, passing the custom binding
                         
-                        Button { toggleSection(.avatar) } label: {
-                            ProfileSectionPill(
-                                title: "My Avatar",
-                                icon: "face.smiling.fill",
-                                isExpanded: .constant(activeSection == .avatar)
-                            )
-                        }
+                        ProfileSectionPill(
+                            title: "My Avatar",
+                            icon: "face.smiling.fill",
+                            isExpanded: sectionBinding(.avatar)
+                        )
                         
                         if activeSection == .avatar {
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -142,13 +150,11 @@ struct CandidateHomeView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                         
-                        Button { toggleSection(.info) } label: {
-                            ProfileSectionPill(
-                                title: "My Info",
-                                icon: "person.fill",
-                                isExpanded: .constant(activeSection == .info)
-                            )
-                        }
+                        ProfileSectionPill(
+                            title: "My Info",
+                            icon: "person.fill",
+                            isExpanded: sectionBinding(.info)
+                        )
                         
                         if activeSection == .info {
                             VStack(spacing: 12) {
@@ -162,13 +168,11 @@ struct CandidateHomeView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
 
-                        Button { toggleSection(.details) } label: {
-                            ProfileSectionPill(
-                                title: "My Details",
-                                icon: "person.text.rectangle.fill",
-                                isExpanded: .constant(activeSection == .details)
-                            )
-                        }
+                        ProfileSectionPill(
+                            title: "My Details",
+                            icon: "person.text.rectangle.fill",
+                            isExpanded: sectionBinding(.details)
+                        )
                         
                         if activeSection == .details {
                             VStack(spacing: 12) {
@@ -188,13 +192,11 @@ struct CandidateHomeView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                         
-                        Button { toggleSection(.docs) } label: {
-                            ProfileSectionPill(
-                                title: "My Documents",
-                                icon: "doc.text.fill",
-                                isExpanded: .constant(activeSection == .docs)
-                            )
-                        }
+                        ProfileSectionPill(
+                            title: "My Documents",
+                            icon: "doc.text.fill",
+                            isExpanded: sectionBinding(.docs)
+                        )
                         
                         if activeSection == .docs {
                             VStack(spacing: 12) {
@@ -211,13 +213,11 @@ struct CandidateHomeView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                         
-                        Button { toggleSection(.prompts) } label: {
-                            ProfileSectionPill(
-                                title: "My Prompts",
-                                icon: "text.bubble.fill",
-                                isExpanded: .constant(activeSection == .prompts)
-                            )
-                        }
+                        ProfileSectionPill(
+                            title: "My Prompts",
+                            icon: "text.bubble.fill",
+                            isExpanded: sectionBinding(.prompts)
+                        )
                         
                         if activeSection == .prompts {
                             VStack(spacing: 12) {
@@ -332,6 +332,8 @@ struct CandidateHomeView: View {
 //
 // --- ALL HELPER VIEWS AND PREVIEWS BELOW ---
 //
+
+// NOTE: ProfileSectionPill is REMOVED from here because it is in its own file now.
 
 struct AddPromptButton: View {
     var action: () -> Void
