@@ -103,7 +103,7 @@ struct CandidateNoteView: View {
                         Button {
                             showSendOfferView = true
                         } label: {
-                            Text("Send Offer")
+                            Text("Send Message")
                                 .font(.headline.bold())
                                 .frame(maxWidth: .infinity)
                                 .padding()

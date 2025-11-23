@@ -39,7 +39,7 @@ struct SendOfferView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         
-                        Text("Offer Details")
+                        Text("Message Details")
                             .font(.headline)
                             .foregroundStyle(.white)
                             .padding(.top)
@@ -79,7 +79,7 @@ struct SendOfferView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Send Offer")
+            .navigationTitle("Send Message")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(brandNavy, for: .navigationBar)
