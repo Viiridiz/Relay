@@ -4,96 +4,99 @@
 //
 //  Created by user286649 on 11/8/25.
 //
-
 import SwiftUI
+
+fileprivate let brandNavy = Color(red: 27/255, green: 30/255, blue: 89/255)
+fileprivate let brandCyan = Color(red: 0.2, green: 0.8, blue: 0.8)
 
 struct CandidateProfileDetailView: View {
     let candidate: Candidate
     var isInteractive: Bool = false
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                
-                // --- HEADER ---
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(candidate.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
+        ZStack {
+            brandNavy.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(candidate.name)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                            
+                            if !candidate.phone.isEmpty {
+                                Text(candidate.phone)
+                                    .font(.headline)
+                                    .foregroundStyle(.white.opacity(0.7))
+                            }
+                        }
                         
-                        if !candidate.phone.isEmpty {
-                            Text(candidate.phone)
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
+                        Spacer()
+                        
+                        Image(candidate.avatarName)
+                            .resizable()
+                            .frame(width: 80, height: 80)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 14) {
+                        if !candidate.school.isEmpty {
+                            ProfileDetailRow(
+                                icon: "graduationcap.fill",
+                                text: candidate.school
+                            )
+                        }
+                        if !candidate.languages.isEmpty {
+                            ProfileDetailRow(
+                                icon: "bubble.left.and.bubble.right.fill",
+                                text: candidate.languages.joined(separator: ", ")
+                            )
+                        }
+                        if !candidate.hobbies.isEmpty {
+                            ProfileDetailRow(
+                                icon: "sparkles",
+                                text: candidate.hobbies.joined(separator: ", ")
+                            )
                         }
                     }
                     
-                    Spacer()
+                    VStack(alignment: .leading, spacing: 12) {
+                        if !candidate.resumeURL.isEmpty {
+                            DocumentButton(
+                                title: "View Resume",
+                                url: candidate.resumeURL,
+                                isInteractive: isInteractive
+                            )
+                        }
+                        if !candidate.coverLetterURL.isEmpty {
+                            DocumentButton(
+                                title: "View Cover Letter",
+                                url: candidate.coverLetterURL,
+                                isInteractive: isInteractive
+                            )
+                        }
+                    }
                     
-                    Image(candidate.avatarName)
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                        .clipShape(Circle())
-                        .background(Circle().fill(Color(.systemGray5)))
-                }
-                
-                // --- DETAILS
-                VStack(alignment: .leading, spacing: 14) {
-                    if !candidate.school.isEmpty {
-                        ProfileDetailRow(
-                            icon: "graduationcap.fill",
-                            text: candidate.school
-                        )
-                    }
-                    if !candidate.languages.isEmpty {
-                        ProfileDetailRow(
-                            icon: "bubble.left.and.bubble.right.fill",
-                            text: candidate.languages.joined(separator: ", ")
-                        )
-                    }
-                    if !candidate.hobbies.isEmpty {
-                        ProfileDetailRow(
-                            icon: "sparkles",
-                            text: candidate.hobbies.joined(separator: ", ")
-                        )
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(candidate.prompts) { prompt in
+                            PromptDisplayCard(prompt: prompt)
+                        }
                     }
                 }
-                
-                // --- DOCUMENT
-                VStack(alignment: .leading, spacing: 12) {
-                    if !candidate.resumeURL.isEmpty {
-                        DocumentButton(
-                            title: "View Resume",
-                            url: candidate.resumeURL,
-                            isInteractive: isInteractive
-                        )
-                    }
-                    if !candidate.coverLetterURL.isEmpty {
-                        DocumentButton(
-                            title: "View Cover Letter",
-                            url: candidate.coverLetterURL,
-                            isInteractive: isInteractive
-                        )
-                    }
-                }
-
-                // --- PROMPT
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(candidate.prompts) { prompt in
-                        PromptDisplayCard(prompt: prompt)
-                    }
-                }
+                .padding()
             }
-            .padding()
         }
         .navigationTitle("Candidate Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarBackground(brandNavy, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
     }
 }
-
-
-// --- NEW HELPER VIEWS ---
 
 struct ProfileDetailRow: View {
     let icon: String
@@ -104,10 +107,11 @@ struct ProfileDetailRow: View {
             Image(systemName: icon)
                 .font(.callout)
                 .frame(width: 20)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(brandCyan)
             Text(text)
                 .font(.callout)
                 .fontWeight(.medium)
+                .foregroundStyle(.white)
         }
     }
 }
@@ -128,9 +132,13 @@ struct DocumentButton: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
-        .background(isInteractive ? Color(.systemGray5) : Color(.systemGray6))
-        .foregroundStyle(isInteractive ? .primary : .secondary)
+        .background(Color.white.opacity(isInteractive ? 0.2 : 0.05))
+        .foregroundStyle(.white)
         .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+        )
     }
     
     var body: some View {
@@ -151,28 +159,26 @@ struct PromptDisplayCard: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(prompt.question)
                 .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
+                .fontWeight(.bold)
+                .foregroundStyle(brandCyan)
+                .textCase(.uppercase)
             
             Text(prompt.answer)
-                .font(.title3) // Big answer
+                .font(.title3)
                 .fontWeight(.medium)
-                .foregroundStyle(.primary)
-                .lineLimit(2)
+                .foregroundStyle(.white)
+                .lineLimit(nil)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color.white.opacity(0.05))
         .cornerRadius(15)
         .overlay(
             RoundedRectangle(cornerRadius: 15)
-                .stroke(Color.black, lineWidth: 1)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
         )
     }
 }
-
-
-// --- PREVIEW ---
 
 #Preview {
     let fakeCandidate: Candidate = {
@@ -194,7 +200,6 @@ struct PromptDisplayCard: View {
     }()
     
     NavigationStack {
-        
         CandidateProfileDetailView(candidate: fakeCandidate, isInteractive: true)
     }
 }

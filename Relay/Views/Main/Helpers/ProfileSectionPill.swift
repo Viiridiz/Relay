@@ -22,23 +22,28 @@ struct ProfileSectionPill: View {
                 Image(systemName: icon)
                     .font(.callout)
                     .frame(width: 20)
-                    .foregroundStyle(.primary)
-            
+                    .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.8)) // Brand Cyan
+                
                 Text(title)
                     .font(.headline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                 
-                Spacer() 
+                Spacer()
                 
                 Image(systemName: "chevron.right")
                     .font(.caption.bold())
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.5))
             }
             .padding(.horizontal)
-            .padding(.vertical, 12)
-            .background(Color(.systemGray6))
-            .cornerRadius(30)
+            .padding(.vertical, 16)
+            .background(Color.white.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+            .cornerRadius(10)
         }
+        .buttonStyle(.plain)
     }
 }

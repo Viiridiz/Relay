@@ -1,6 +1,17 @@
 import SwiftUI
 
-struct PromptCategory: Identifiable, Hashable {
+fileprivate let brandNavy = Color(red: 27/255, green: 30/255, blue: 89/255)
+fileprivate let brandGradient = LinearGradient(
+    colors: [
+        Color(red: 0.85, green: 0.3, blue: 0.6),
+        Color(red: 0.4, green: 0.3, blue: 0.8),
+        Color(red: 0.2, green: 0.8, blue: 0.8)
+    ],
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+)
+
+struct PromptCategory: Identifiable {
     let id = UUID()
     let name: String
     let questions: [String]
@@ -12,25 +23,20 @@ enum SheetContext: Identifiable {
     
     var id: String {
         switch self {
-        case .selectPrompt:
-            return "select"
-        case .editPrompt(let prompt):
-            return prompt.id
+        case .selectPrompt: return "select"
+        case .editPrompt(let prompt): return prompt.id
         }
     }
 }
 
-// --- MAIN VIEW ---
 struct CandidateHomeView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     
-    // existing
     @State private var name: String = ""
     @State private var phone: String = ""
     @State private var resumeURL: String = ""
     @State private var coverLetterURL: String = ""
     
-    // new stuff
     @State private var school: String = ""
     @State private var languages: String = ""
     @State private var certifications: String = ""
@@ -43,12 +49,10 @@ struct CandidateHomeView: View {
     
     let avatars = ["avatar_1", "avatar_2", "avatar_3", "avatar_4", "avatar_5", "avatar_6"]
     
-    // enum for sections
     enum ActiveSection: Hashable {
         case avatar, info, details, docs, prompts
     }
     
-    // state for collapsible sections
     @State private var activeSection: ActiveSection? = nil
 
     let promptBank: [PromptCategory] = [
@@ -57,23 +61,40 @@ struct CandidateHomeView: View {
             "A skill I taught myself is...",
             "The tech stack I find most exciting is...",
             "Something I built that I'm proud of is...",
-            "The most complex problem I've solved..."
+            "The most complex problem I've solved...",
+            "My coding superpower is..."
         ]),
         PromptCategory(name: "Passion & Personality", questions: [
             "I'm passionate about this field because...",
             "I geek out on...",
             "A non-work-related fact about me is...",
-            "My ideal team environment is..."
+            "My ideal team environment is...",
+            "If I could only use one app forever...",
+            "On weekends you can find me..."
         ]),
         PromptCategory(name: "Career & Goals", questions: [
             "I'm looking for a company that values...",
             "In five years, I want to be...",
             "The best career advice I've received...",
-            "A company's mission I admire is..."
+            "A company's mission I admire is...",
+            "My dream mentorship looks like...",
+            "I want to make an impact by..."
+        ]),
+        PromptCategory(name: "Work Style", questions: [
+            "I work best when...",
+            "My approach to debugging is...",
+            "When receiving feedback, I...",
+            "I prefer communication that is...",
+            "To me, a 'finished' product means..."
+        ]),
+        PromptCategory(name: "The Future", questions: [
+            "A technology trend I'm watching is...",
+            "I believe the future of tech is...",
+            "If I could solve one global issue...",
+            "I want to build tools that..."
         ])
     ]
     
-   
     func sectionBinding(_ section: ActiveSection) -> Binding<Bool> {
         Binding(
             get: { activeSection == section },
@@ -92,20 +113,23 @@ struct CandidateHomeView: View {
     }
     
     var body: some View {
+        ZStack {
+            brandNavy.ignoresSafeArea()
+            
             if authViewModel.candidateProfile != nil {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
 
-                        // --- HEADER ---
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Welcome, \(name.isEmpty ? "Candidate" : name)!")
                                     .font(.title2)
                                     .fontWeight(.bold)
+                                    .foregroundStyle(.white)
                                 
                                 Text("Your profile is your first impression.")
                                     .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.white.opacity(0.7))
                             }
                             
                             Spacer()
@@ -114,11 +138,9 @@ struct CandidateHomeView: View {
                                 .resizable()
                                 .frame(width: 60, height: 60)
                                 .clipShape(Circle())
-                                .background(Circle().fill(Color(.systemGray5)))
+                                .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
                         }
-                        
-                        // --- COLLAPSIBLE PILL SECTIONS ---
-                        // We use the shared ProfileSectionPill, passing the custom binding
+                        .padding(.bottom, 10)
                         
                         ProfileSectionPill(
                             title: "My Avatar",
@@ -135,7 +157,7 @@ struct CandidateHomeView: View {
                                             .frame(width: 60, height: 60)
                                             .clipShape(Circle())
                                             .overlay(
-                                                Circle().stroke(avatarName == avatar ? Color.blue : Color.clear, lineWidth: 3)
+                                                Circle().stroke(avatarName == avatar ? Color(red: 0.2, green: 0.8, blue: 0.8) : Color.clear, lineWidth: 3)
                                             )
                                             .onTapGesture {
                                                 withAnimation {
@@ -144,8 +166,8 @@ struct CandidateHomeView: View {
                                             }
                                     }
                                 }
-                                .padding(.horizontal)
-                                .padding(.top, 8)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 8)
                             }
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
@@ -158,10 +180,8 @@ struct CandidateHomeView: View {
                         
                         if activeSection == .info {
                             VStack(spacing: 12) {
-                                TextField("Name", text: $name)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                TextField("Phone (Optional)", text: $phone)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                CleanTextField(placeholder: "Full Name", text: $name)
+                                CleanTextField(placeholder: "Phone (Optional)", text: $phone)
                                     .keyboardType(.phonePad)
                             }
                             .padding(.top, 8)
@@ -176,17 +196,10 @@ struct CandidateHomeView: View {
                         
                         if activeSection == .details {
                             VStack(spacing: 12) {
-                                TextField("School / University", text: $school)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                TextField("Languages (comma-separated)", text: $languages)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .autocapitalization(.none)
-                                TextField("Certifications (comma-separated)", text: $certifications)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .autocapitalization(.none)
-                                TextField("Hobbies (comma-separated)", text: $hobbies)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .autocapitalization(.none)
+                                CleanTextField(placeholder: "School / University", text: $school)
+                                CleanTextField(placeholder: "Languages (comma-separated)", text: $languages)
+                                CleanTextField(placeholder: "Certifications (comma-separated)", text: $certifications)
+                                CleanTextField(placeholder: "Hobbies (comma-separated)", text: $hobbies)
                             }
                             .padding(.top, 8)
                             .transition(.opacity.combined(with: .move(edge: .top)))
@@ -200,13 +213,9 @@ struct CandidateHomeView: View {
                         
                         if activeSection == .docs {
                             VStack(spacing: 12) {
-                                TextField("Resume URL", text: $resumeURL)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .autocapitalization(.none)
+                                CleanTextField(placeholder: "Resume URL", text: $resumeURL)
                                     .keyboardType(.URL)
-                                TextField("Cover Letter URL (Optional)", text: $coverLetterURL)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .autocapitalization(.none)
+                                CleanTextField(placeholder: "Cover Letter URL (Optional)", text: $coverLetterURL)
                                     .keyboardType(.URL)
                             }
                             .padding(.top, 8)
@@ -242,50 +251,62 @@ struct CandidateHomeView: View {
                     }
                     .padding()
                 }
-                .navigationTitle("My Profile")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Save") {
-                            saveProfile()
-                        }
-                        .disabled(authViewModel.isLoading)
-                        .fontWeight(.semibold)
-                    }
-                }
-                .onAppear(perform: loadProfileData)
-                .onChange(of: authViewModel.candidateProfile) {
-                    loadProfileData()
-                }
-                .sheet(item: $sheetContext) { context in
-                    switch context {
-                        
-                    case .selectPrompt:
-                        PromptSelectionView(promptBank: promptBank, onSelect: { question in
-                            let newPrompt = Prompt(question: question, answer: "")
-                            self.prompts.append(newPrompt)
-                            self.sheetContext = .editPrompt(newPrompt)
-                        })
-                        
-                    case .editPrompt(let prompt):
-                        if let index = self.prompts.firstIndex(where: { $0.id == prompt.id }) {
-                            PromptEditorView(
-                                prompt: $prompts[index],
-                                onSave: {
-                                    self.sheetContext = nil
-                                },
-                                onDelete: {
-                                    self.prompts.remove(at: index)
-                                    self.sheetContext = nil
-                                }
-                            )
-                        }
-                    }
-                }
             } else {
                 ProgressView()
+                    .tint(.white)
             }
         }
+        .navigationTitle("My Profile")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarBackground(brandNavy, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: {
+                    saveProfile()
+                }) {
+                    Text("Save")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(brandGradient)
+                        .clipShape(Capsule())
+                }
+                .disabled(authViewModel.isLoading)
+            }
+        }
+        .onAppear(perform: loadProfileData)
+        .onChange(of: authViewModel.candidateProfile) {
+            loadProfileData()
+        }
+        .sheet(item: $sheetContext) { context in
+            switch context {
+                
+            case .selectPrompt:
+                PromptSelectionView(promptBank: promptBank, onSelect: { question in
+                    let newPrompt = Prompt(question: question, answer: "")
+                    self.prompts.append(newPrompt)
+                    self.sheetContext = .editPrompt(newPrompt)
+                })
+                
+            case .editPrompt(let prompt):
+                if let index = self.prompts.firstIndex(where: { $0.id == prompt.id }) {
+                    PromptEditorView(
+                        prompt: $prompts[index],
+                        onSave: {
+                            self.sheetContext = nil
+                        },
+                        onDelete: {
+                            self.prompts.remove(at: index)
+                            self.sheetContext = nil
+                        }
+                    )
+                }
+            }
+        }
+    }
     
     func loadProfileData() {
         guard let profile = authViewModel.candidateProfile else { return }
@@ -329,9 +350,19 @@ struct CandidateHomeView: View {
     }
 }
 
-//
-// --- ALL HELPER VIEWS AND PREVIEWS BELOW ---
-
+struct CleanTextField: View {
+    var placeholder: String
+    @Binding var text: String
+    
+    var body: some View {
+        TextField("", text: $text, prompt: Text(placeholder).foregroundColor(.white.opacity(0.5)))
+            .padding()
+            .foregroundStyle(.white)
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(10)
+            .autocapitalization(.none)
+    }
+}
 
 struct AddPromptButton: View {
     var action: () -> Void
@@ -339,18 +370,20 @@ struct AddPromptButton: View {
         Button(action: action) {
             HStack {
                 Text("Add a prompt")
-                    .font(.callout)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                 
                 Spacer()
                 
-                Image(systemName: "plus")
-                    .foregroundStyle(.primary)
+                Image(systemName: "plus.circle.fill")
+                    .foregroundStyle(.white)
             }
             .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                    .foregroundStyle(.white.opacity(0.6))
+            )
         }
     }
 }
@@ -360,20 +393,26 @@ struct PromptCard: View {
     var action: () -> Void
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(prompt.question)
-                    .font(.callout)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+                    .font(.footnote)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.8))
+                    .textCase(.uppercase)
+                
                 Text(prompt.answer.isEmpty ? "Tap to add..." : prompt.answer)
-                    .font(.callout)
-                    .foregroundStyle(prompt.answer.isEmpty ? .secondary : .primary)
+                    .font(.body)
+                    .foregroundStyle(.white)
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.systemGray6))
+            .background(Color.white.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
             .cornerRadius(10)
         }
         .buttonStyle(.plain)
@@ -385,21 +424,35 @@ struct PromptQuestionView: View {
     var onSelect: (String) -> Void
     
     var body: some View {
-        List(category.questions, id: \.self) { question in
-            Button(action: {
-                onSelect(question)
-            }) {
-                Text(question)
-                    .font(.callout)
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+        ZStack {
+            brandNavy.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(category.questions, id: \.self) { question in
+                        Button(action: {
+                            onSelect(question)
+                        }) {
+                            Text(question)
+                                .font(.callout)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding()
             }
-            .buttonStyle(.plain)
         }
-        .listStyle(.inset)
         .navigationTitle(category.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarBackground(brandNavy, for: .navigationBar)
     }
 }
 
@@ -410,34 +463,51 @@ struct PromptSelectionView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(alignment: .center, spacing: 20) {
+            ZStack {
+                brandNavy.ignoresSafeArea()
                 
-                Text("Select a Prompt")
-                    .font(.title2.bold())
-                    .padding(.top)
+                ScrollView {
+                    VStack(alignment: .center, spacing: 20) {
+                        
+                        Text("Select a Prompt")
+                            .font(.title2.bold())
+                            .foregroundStyle(.white)
+                            .padding(.top)
 
-                List(promptBank) { category in
-                    NavigationLink(value: category) {
-                        HStack {
-                            Image(systemName: "text.bubble.fill")
-                                .foregroundStyle(.primary)
-                            Text(category.name)
-                                .font(.callout)
-                                .fontWeight(.semibold)
+                        VStack(spacing: 12) {
+                            ForEach(promptBank) { category in
+                                NavigationLink(destination: PromptQuestionView(category: category, onSelect: onSelect)) {
+                                    HStack {
+                                        Image(systemName: "text.bubble.fill")
+                                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.8))
+                                        Text(category.name)
+                                            .font(.callout)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(.white)
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .foregroundStyle(.white.opacity(0.5))
+                                    }
+                                    .padding()
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.white, lineWidth: 1)
+                                    )
+                                }
+                            }
                         }
-                        .padding(.vertical, 4)
                     }
+                    .padding()
                 }
-                .listStyle(.insetGrouped)
-            }
-            .navigationDestination(for: PromptCategory.self) { category in
-                PromptQuestionView(category: category, onSelect: onSelect)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(.white)
                 }
             }
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(brandNavy, for: .navigationBar)
         }
     }
 }
@@ -451,24 +521,46 @@ struct PromptEditorView: View {
     
     let maxChars = 150
     
+    init(prompt: Binding<Prompt>, onSave: @escaping () -> Void, onDelete: @escaping () -> Void) {
+        self._prompt = prompt
+        self.onSave = onSave
+        self.onDelete = onDelete
+        UITextView.appearance().backgroundColor = .clear
+    }
+    
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
+            ZStack {
+                brandNavy.ignoresSafeArea()
                 
-                Text("Edit Prompt")
-                    .font(.title2.bold())
-                    .padding(.top)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(prompt.question)
-                        .font(.callout)
-                        .fontWeight(.semibold)
-                        .padding(.horizontal)
+                VStack(spacing: 16) {
                     
-                    TextEditor(text: $prompt.answer)
-                        .frame(height: 200)
-                        .padding(8)
-                        .background(Color(.systemGray6))
+                    Text("Edit Prompt")
+                        .font(.title2.bold())
+                        .foregroundStyle(.white)
+                        .padding(.top)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(prompt.question)
+                            .font(.callout)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color(red: 0.2, green: 0.8, blue: 0.8))
+                            .padding(.horizontal)
+                        
+                        ZStack(alignment: .topLeading) {
+                            if prompt.answer.isEmpty {
+                                Text("Type your answer here...")
+                                    .foregroundStyle(.white.opacity(0.5))
+                                    .padding(12)
+                            }
+                            
+                            TextEditor(text: $prompt.answer)
+                                .scrollContentBackground(.hidden)
+                                .foregroundStyle(.white)
+                                .frame(height: 200)
+                                .padding(4)
+                        }
+                        .background(Color.white.opacity(0.1))
                         .cornerRadius(10)
                         .padding(.horizontal)
                         .onChange(of: prompt.answer) {
@@ -476,59 +568,56 @@ struct PromptEditorView: View {
                                 prompt.answer = String(prompt.answer.prefix(maxChars))
                             }
                         }
+                        
+                        Text("\(prompt.answer.count) / \(maxChars)")
+                            .font(.caption)
+                            .foregroundStyle(prompt.answer.count >= maxChars ? Color(red: 0.85, green: 0.3, blue: 0.6) : .white.opacity(0.7))
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.horizontal)
+                    }
                     
-                    Text("\(prompt.answer.count) / \(maxChars)")
-                        .font(.caption)
-                        .foregroundStyle(prompt.answer.count >= maxChars ? .red : .secondary)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .padding(.horizontal)
+                    Spacer()
+                    
+                    Button(role: .destructive, action: {
+                        onDelete()
+                    }) {
+                        Text("Delete Prompt")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.red)
+                            .cornerRadius(10)
+                    }
+                    .padding()
                 }
-                
-                Spacer()
-                
-                Button("Delete Prompt", role: .destructive) {
-                    onDelete()
-                }
-                .padding()
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .foregroundStyle(.white)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") { onSave() }
-                        .fontWeight(.semibold)
+                    Button(action: { onSave() }) {
+                        Text("Save")
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(brandGradient)
+                            .clipShape(Capsule())
+                    }
                 }
             }
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(brandNavy, for: .navigationBar)
         }
     }
 }
-
-
-// --- PREVIEWS ---
 
 #Preview("CandidateHomeView") {
     NavigationStack {
         CandidateHomeView()
             .environmentObject(AuthViewModel())
     }
-}
-
-#Preview("PromptSelectionView") {
-    let previewBank: [PromptCategory] = [
-        PromptCategory(name: "Projects & Skills", questions: ["q1", "q2"]),
-        PromptCategory(name:"Passion & Personality", questions: ["q3", "q4"]),
-    ]
-    return PromptSelectionView(
-        promptBank: previewBank,
-        onSelect: { _ in }
-    )
-}
-
-#Preview("PromptEditorView") {
-    PromptEditorView(
-        prompt: .constant(Prompt(question: "My proudest project is...", answer: "I built this app!")),
-        onSave: { },
-        onDelete: { }
-    )
 }

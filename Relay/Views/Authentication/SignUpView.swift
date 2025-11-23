@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct SignUpView: View {
-
     var role: UserAccount.UserRole
     
     @State private var email = ""
@@ -17,64 +16,107 @@ struct SignUpView: View {
     
     @EnvironmentObject var authViewModel: AuthViewModel
     
+    // Theme Colors
+    let brandNavy = Color(red: 27/255, green: 30/255, blue: 89/255)
+    let brandGradient = LinearGradient(
+        colors: [
+            Color(red: 0.85, green: 0.3, blue: 0.6),
+            Color(red: 0.4, green: 0.3, blue: 0.8),
+            Color(red: 0.2, green: 0.8, blue: 0.8)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Create \(role == .candidate ? "Candidate" : "Recruiter") Account")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.bottom)
+        ZStack {
+            brandNavy.ignoresSafeArea()
             
-            TextField("Full Name", text: $name)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .autocapitalization(.words)
-            
-            TextField("Email", text: $email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-            
-            SecureField("Password", text: $password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-
-            //loading spinner if the view model is busy
-            if authViewModel.isLoading {
-                ProgressView()
-                    .padding(.top)
-            } else {
-                Button(action: {
-                    Task {
-                        await authViewModel.signUp(
-                            email: email,
-                            password: password,
-                            name: name,
-                            role: role
-                        )
-                    }
-                }) {
+            VStack(spacing: 30) {
+                Spacer()
+                
+                VStack(spacing: 8) {
                     Text("Create Account")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                    
+                    Text("Sign up as a \(role == .candidate ? "Candidate" : "Recruiter")")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
                 }
-                .padding(.top)
+                
+                VStack(spacing: 16) {
+                    // Clean Outline Style
+                    TextField("Full Name", text: $name)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(Color.white, lineWidth: 1)
+                        )
+                        .autocapitalization(.words)
+                        .foregroundStyle(.white)
+                    
+                    TextField("Email", text: $email)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(Color.white, lineWidth: 1)
+                        )
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .foregroundStyle(.white)
+                    
+                    SecureField("Password", text: $password)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(Color.white, lineWidth: 1)
+                        )
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal)
+
+                if authViewModel.isLoading {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Button(action: {
+                        Task {
+                            await authViewModel.signUp(
+                                email: email,
+                                password: password,
+                                name: name,
+                                role: role
+                            )
+                        }
+                    }) {
+                        Text("Sign Up")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 55)
+                            .background(brandGradient)
+                            .cornerRadius(30)
+                            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                    }
+                    .padding(.horizontal)
+                }
+                
+                if !authViewModel.errorMessage.isEmpty {
+                    Text(authViewModel.errorMessage)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+                
+                Spacer()
             }
-            
-            //error message if one exists
-            if !authViewModel.errorMessage.isEmpty {
-                Text(authViewModel.errorMessage)
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .padding()
-            }
-            
-            Spacer() 
+            .padding()
         }
-        .padding()
-        .navigationTitle("Sign Up")
-        .navigationBarTitleDisplayMode(.inline)
+        .preferredColorScheme(.dark)
     }
 }
 

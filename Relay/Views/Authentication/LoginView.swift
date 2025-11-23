@@ -12,53 +12,86 @@ struct LoginView: View {
     
     @EnvironmentObject var authViewModel: AuthViewModel
     
+    // Theme Colors
+    let brandNavy = Color(red: 27/255, green: 30/255, blue: 89/255)
+    let brandGradient = LinearGradient(
+        colors: [
+            Color(red: 0.85, green: 0.3, blue: 0.6),
+            Color(red: 0.4, green: 0.3, blue: 0.8),
+            Color(red: 0.2, green: 0.8, blue: 0.8)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Welcome Back")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.bottom)
+        ZStack {
+            brandNavy.ignoresSafeArea()
             
-            TextField("Email", text: $email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-            
-            SecureField("Password", text: $password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-
-            if authViewModel.isLoading {
-                ProgressView()
-                    .padding(.top)
-            } else {
-                Button(action: {
-                    Task {
-                        await authViewModel.signIn(email: email, password: password)
-                    }
-                }) {
-                    Text("Log In")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
+            VStack(spacing: 30) {
+                Spacer()
+                
+                Text("Welcome Back")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                
+                VStack(spacing: 16) {
+                    TextField("Email", text: $email)
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(Color.white, lineWidth: 1)
+                        )
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .foregroundStyle(.white)
+                    
+                    SecureField("Password", text: $password)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(Color.white, lineWidth: 1)
+                        )
+                        .foregroundStyle(.white)
                 }
-                .padding(.top)
+                .padding(.horizontal)
+
+                if authViewModel.isLoading {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Button(action: {
+                        Task {
+                            await authViewModel.signIn(email: email, password: password)
+                        }
+                    }) {
+                        Text("Log In")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 55)
+                            .background(brandGradient)
+                            .cornerRadius(30)
+                            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                    }
+                    .padding(.horizontal)
+                }
+                
+                if !authViewModel.errorMessage.isEmpty {
+                    Text(authViewModel.errorMessage)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+                
+                Spacer()
             }
-            
-            if !authViewModel.errorMessage.isEmpty {
-                Text(authViewModel.errorMessage)
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .padding()
-            }
-            
-            Spacer()
+            .padding()
         }
-        .padding()
-        .navigationTitle("Log In")
-        .navigationBarTitleDisplayMode(.inline)
+        .preferredColorScheme(.dark)
     }
 }
 

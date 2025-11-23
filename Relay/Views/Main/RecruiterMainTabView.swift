@@ -1,17 +1,34 @@
-//
-//  RecruiterMainTabView.swift
-//  Relay
-//
-//  Created by user286649 on 11/8/25.
-//
 import SwiftUI
 
 struct RecruiterMainTabView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
 
+    init() {
+        let navy = UIColor(red: 27/255, green: 30/255, blue: 89/255, alpha: 1.0)
+        let cyan = UIColor(red: 0.2, green: 0.8, blue: 0.8, alpha: 1.0)
+        let inactive = UIColor.white.withAlphaComponent(0.5)
+        
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = navy
+        appearance.shadowColor = nil
+        
+        let itemAppearance = UITabBarItemAppearance()
+        itemAppearance.normal.iconColor = inactive
+        itemAppearance.normal.titleTextAttributes = [.foregroundColor: inactive]
+        itemAppearance.selected.iconColor = cyan
+        itemAppearance.selected.titleTextAttributes = [.foregroundColor: cyan]
+        
+        appearance.stackedLayoutAppearance = itemAppearance
+        appearance.inlineLayoutAppearance = itemAppearance
+        appearance.compactInlineLayoutAppearance = itemAppearance
+        
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+
     var body: some View {
         TabView {
-            // tab 1: events
             NavigationStack {
                 RecruiterEventsView()
             }
@@ -19,7 +36,6 @@ struct RecruiterMainTabView: View {
                 Label("Events", systemImage: "calendar")
             }
             
-            // tab 2: new dashboard
             NavigationStack {
                 DecisionDashboardView()
             }
@@ -27,7 +43,6 @@ struct RecruiterMainTabView: View {
                 Label("Interested", systemImage: "star.fill")
             }
             
-            // tab 3: profile
             NavigationStack {
                 if authViewModel.recruiterProfile != nil {
                     RecruiterProfileView()
@@ -39,7 +54,6 @@ struct RecruiterMainTabView: View {
                 Label("Profile", systemImage: "person.circle")
             }
             
-            // Tab 4: Settings
             NavigationStack {
                 SettingsView()
             }
@@ -47,6 +61,7 @@ struct RecruiterMainTabView: View {
                 Label("Settings", systemImage: "gear")
             }
         }
+        .tint(Color(red: 0.2, green: 0.8, blue: 0.8))
     }
 }
 
