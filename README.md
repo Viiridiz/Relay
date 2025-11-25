@@ -22,7 +22,7 @@ Recruiters create events, and candidates join via a 6-digit code. Recruiters the
 * **Rapid Review:** A focused view of one candidate at a time to speed up screening.
 * **Decision Dashboard:** Manage candidates marked as "Interested" and send formal offers.
 
-## Technical Architecture
+## Technical Architectures
 
 This project follows the **MVVM (Model-View-ViewModel)** architecture pattern.
 
