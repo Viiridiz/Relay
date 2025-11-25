@@ -47,36 +47,62 @@ struct SignUpView: View {
                 }
                 
                 VStack(spacing: 16) {
-                    // Clean Outline Style
-                    TextField("Full Name", text: $name)
-                        .padding()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.white, lineWidth: 1)
-                        )
-                        .autocapitalization(.words)
-                        .foregroundStyle(.white)
+  
+                    ZStack(alignment: .leading) {
+                        if name.isEmpty {
+                            Text("Full Name")
+                                .foregroundColor(.white.opacity(0.6))
+                                .padding(.leading, 16)
+                        }
+                        
+                        TextField("", text: $name)
+                            .padding()
+                            .autocapitalization(.words)
+                            .foregroundColor(.white)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 15)
+                            .stroke(Color.white, lineWidth: 1)
+                    )
                     
-                    TextField("Email", text: $email)
-                        .padding()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.white, lineWidth: 1)
-                        )
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .foregroundStyle(.white)
+      
+                    ZStack(alignment: .leading) {
+                        if email.isEmpty {
+                            Text("Email")
+                                .foregroundColor(.white.opacity(0.6))
+                                .padding(.leading, 16)
+                        }
+                        
+                        TextField("", text: $email)
+                            .padding()
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .foregroundColor(.white)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 15)
+                            .stroke(Color.white, lineWidth: 1)
+                    )
                     
-                    SecureField("Password", text: $password)
-                        .padding()
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.white, lineWidth: 1)
-                        )
-                        .foregroundStyle(.white)
+
+                    ZStack(alignment: .leading) {
+                        if password.isEmpty {
+                            Text("Password")
+                                .foregroundColor(.white.opacity(0.6))
+                                .padding(.leading, 16)
+                        }
+                        
+                        SecureField("", text: $password)
+                            .padding()
+                            .foregroundColor(.white)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 15)
+                            .stroke(Color.white, lineWidth: 1)
+                    )
                 }
                 .padding(.horizontal)
-
+                
                 if authViewModel.isLoading {
                     ProgressView()
                         .tint(.white)
